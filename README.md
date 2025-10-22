@@ -1,31 +1,37 @@
-# yii2-dynamicform
+# yii2-dynamicform-dadle
 
-[![Latest Version](https://img.shields.io/github/release/wbraganca/yii2-dynamicform.svg?style=flat-square)](https://github.com/wbraganca/yii2-dynamicform/releases)
-[![Software License](http://img.shields.io/badge/license-BSD3-brightgreen.svg?style=flat-square)](LICENSE.md)
-[![Total Downloads](https://img.shields.io/packagist/dt/wbraganca/yii2-dynamicform.svg?style=flat-square)](https://packagist.org/packages/wbraganca/yii2-dynamicform)
+[![Latest Version](https://img.shields.io/github/v/tag/AlexandrDadle/yii2-dynamicform-dadle?label=release&style=flat-square)](https://github.com/AlexandrDadle/yii2-dynamicform-dadle/releases)
+[![Software License](https://img.shields.io/badge/license-BSD3-brightgreen.svg?style=flat-square)](LICENSE.md)
 
-
-It is widget to yii2 framework to clone form elements in a nested manner, maintaining accessibility.
+Maintained fork of `wbraganca/yii2-dynamicform` with updates for modern PHP (7.4/8.x), recent Symfony DomCrawler / CssSelector releases, and contemporary Yii2 projects. The widget clones form blocks, keeps ActiveForm validation in sync, and remains compatible with Kartik widgets commonly used in Yii2 applications.
 ![yii2-dynamicform](https://wbraganca.com/img/yii2-dynamicform/sample.jpg)
 
 ## Installation
 
 
-The preferred way to install this extension is through [composer](http://getcomposer.org/download/).
+The preferred way to install the fork is via [Composer](https://getcomposer.org/).
 
-Either run
+1. Register the repository (once per project):
 
-```
-php composer.phar require --prefer-dist wbraganca/yii2-dynamicform "*"
-```
+   ```bash
+   composer config repositories.yii2-dynamicform-dadle vcs https://github.com/AlexandrDadle/yii2-dynamicform-dadle.git
+   ```
 
-or add
+2. Require the package:
 
-```
-"wbraganca/yii2-dynamicform": "*"
-```
+   ```bash
+   composer require alexandrdadle/yii2-dynamicform-dadle:^0.2
+   ```
 
-to the require section of your `composer.json` file.
+   Replace `^0.2` with the latest tagged release when available.
+
+3. Import the widget using the new namespace:
+
+   ```php
+   use alexandrdadle\dynamicform\DynamicFormWidget;
+   ```
+
+Breaking namespace changes were introduced in this fork (`alexandrdadle\dynamicform`). Update existing imports accordingly when upgrading from the original package.
 
 
 ## Demos
@@ -48,7 +54,7 @@ to the require section of your `composer.json` file.
 <?php
 use yii\helpers\Html;
 use yii\widgets\ActiveForm;
-use wbraganca\dynamicform\DynamicFormWidget;
+use alexandrdadle\dynamicform\DynamicFormWidget;
 ?>
 
 <div class="customer-form">
@@ -377,7 +383,7 @@ class Model extends \yii\base\Model
 <?php
 use yii\helpers\Html;
 use yii\widgets\ActiveForm;
-use wbraganca\dynamicform\DynamicFormWidget;
+use alexandrdadle\dynamicform\DynamicFormWidget;
 ?>
 
 <div class="customer-form">
