@@ -31,6 +31,36 @@
         limitReached: 'limitReached'
     };
 
+    var _resolveWidgetOptions = function (attr) {
+        if (!attr) {
+            console.error('data-dynamicform attribute is missing.');
+            return null;
+        }
+
+        var key = $.trim(attr);
+        if (!key.length) {
+            console.error('data-dynamicform attribute is empty.');
+            return null;
+        }
+
+        if (key.charAt(0) === '{' || key.charAt(0) === '[') {
+            try {
+                return JSON.parse(key);
+            } catch (err) {
+                console.error('Failed to parse widget options JSON:', err);
+                return null;
+            }
+        }
+
+        var options = window[key];
+        if (!options) {
+            console.error('Dynamic form options not found for key:', key);
+            return null;
+        }
+
+        return options;
+    };
+
     var methods = {
         init: function (widgetOptions) {
             return this.each(function () {
@@ -39,38 +69,44 @@
         },
 
         addItem: function (widgetOptions, e, $elem) {
-           _addItem(widgetOptions, e, $elem);
+            _addItem(widgetOptions, e, $elem);
         },
 
         deleteItem: function (widgetOptions, e, $elem) {
-           _deleteItem(widgetOptions, e, $elem);
+            _deleteItem(widgetOptions, e, $elem);
         },
 
         updateContainer: function () {
-            var widgetOptions = eval($(this).attr('data-dynamicform'));
+            var widgetOptions = _resolveWidgetOptions($(this).attr('data-dynamicform'));
+            if (!widgetOptions) {
+                return;
+            }
             _updateAttributes(widgetOptions);
             _restoreSpecialJs(widgetOptions);
             _fixFormValidaton(widgetOptions);
         }
     };
 
-    var _parseTemplate = function(widgetOptions) {
+    var _parseTemplate = function (widgetOptions) {
 
         var $template = $(widgetOptions.template);
-        $template.find('div[data-dynamicform]').each(function(){
-            var widgetOptions = eval($(this).attr('data-dynamicform'));
+        $template.find('div[data-dynamicform]').each(function () {
+            var widgetOptions = _resolveWidgetOptions($(this).attr('data-dynamicform'));
+            if (!widgetOptions) {
+                return;
+            }
             if ($(widgetOptions.widgetItem).length > 1) {
                 var item = $(this).find(widgetOptions.widgetItem).first()[0].outerHTML;
                 $(this).find(widgetOptions.widgetBody).html(item);
             }
         });
 
-        $template.find('input, textarea, select').each(function() {
+        $template.find('input, textarea, select').each(function () {
             if ($(this).is(':checkbox') || $(this).is(':radio')) {
-                var type         = ($(this).is(':checkbox')) ? 'checkbox' : 'radio';
-                var inputName    = $(this).attr('name');
+                var type = ($(this).is(':checkbox')) ? 'checkbox' : 'radio';
+                var inputName = $(this).attr('name');
                 var $inputHidden = $template.find('input[type="hidden"][name="' + inputName + '"]').first();
-                var count        = $template.find('input[type="' + type +'"][name="' + inputName + '"]').length;
+                var count = $template.find('input[type="' + type + '"][name="' + inputName + '"]').length;
 
                 if ($inputHidden && count === 1) {
                     $(this).val(1);
@@ -78,40 +114,43 @@
                 }
 
                 $(this).prop('checked', false);
-            } else if($(this).is('select')) {
+            } else if ($(this).is('select')) {
                 $(this).find('option:selected').removeAttr("selected");
             } else {
-                $(this).val(''); 
+                $(this).val('');
             }
         });
 
         // remove "error/success" css class
         var yiiActiveFormData = $('#' + widgetOptions.formId).yiiActiveForm('data');
-        $template.find('.' + yiiActiveFormData.settings.errorCssClass).removeClass(yiiActiveFormData.settings.errorCssClass);
-        $template.find('.' + yiiActiveFormData.settings.successCssClass).removeClass(yiiActiveFormData.settings.successCssClass);
+        if (yiiActiveFormData && yiiActiveFormData.settings) {
+            $template.find('.' + yiiActiveFormData.settings.errorCssClass).removeClass(yiiActiveFormData.settings.errorCssClass);
+            $template.find('.' + yiiActiveFormData.settings.successCssClass).removeClass(yiiActiveFormData.settings.successCssClass);
+        }
 
         return $template;
     };
 
-    var _getWidgetOptionsRoot = function(widgetOptions) {
-        return eval($(widgetOptions.widgetBody).parents('div[data-dynamicform]').last().attr('data-dynamicform'));
+    var _getWidgetOptionsRoot = function (widgetOptions) {
+        var rootOptions = _resolveWidgetOptions($(widgetOptions.widgetBody).parents('div[data-dynamicform]').last().attr('data-dynamicform'));
+        return rootOptions;
     };
 
-    var _getLevel = function($elem) {
+    var _getLevel = function ($elem) {
         var level = $elem.parents('div[data-dynamicform]').length;
         level = (level < 0) ? 0 : level;
         return level;
     };
 
-    var _count = function($elem, widgetOptions) {
+    var _count = function ($elem, widgetOptions) {
         return $elem.closest('.' + widgetOptions.widgetContainer).find(widgetOptions.widgetItem).length;
     };
 
-    var _createIdentifiers = function(level) {
+    var _createIdentifiers = function (level) {
         return new Array(level + 2).join('0').split('');
     };
 
-    var _addItem = function(widgetOptions, e, $elem) {
+    var _addItem = function (widgetOptions, e, $elem) {
         var count = _count($elem, widgetOptions);
 
         if (count < widgetOptions.limit) {
@@ -134,42 +173,48 @@
         }
     };
 
-    var _removeValidations = function($elem, widgetOptions, count) {
+    var _removeValidations = function ($elem, widgetOptions, count) {
         if (count > 1) {
-            $elem.find('div[data-dynamicform]').each(function() {
-                var currentWidgetOptions = eval($(this).attr('data-dynamicform'));
-                var level           = _getLevel($(this));
-                var identifiers     = _createIdentifiers(level);
-                var numItems        = $(this).find(currentWidgetOptions.widgetItem).length;
+            $elem.find('div[data-dynamicform]').each(function () {
+                var currentWidgetOptions = _resolveWidgetOptions($(this).attr('data-dynamicform'));
+                if (!currentWidgetOptions) {
+                    return;
+                }
+                var level = _getLevel($(this));
+                var identifiers = _createIdentifiers(level);
+                var numItems = $(this).find(currentWidgetOptions.widgetItem).length;
 
-                for (var i = 1; i <= numItems -1; i++) {
+                for (var i = 1; i <= numItems - 1; i++) {
                     var aux = identifiers;
                     aux[level] = i;
-                    currentWidgetOptions.fields.forEach(function(input) {
+                    currentWidgetOptions.fields.forEach(function (input) {
                         var id = input.id.replace("{}", aux.join('-'));
-                        if ($("#" + currentWidgetOptions.formId).yiiActiveForm("find", id) !== "undefined") {
+                        if (typeof $("#" + currentWidgetOptions.formId).yiiActiveForm("find", id) !== 'undefined') {
                             $("#" + currentWidgetOptions.formId).yiiActiveForm("remove", id);
                         }
                     });
                 }
             });
 
-            var level          = _getLevel($elem.closest('.' + widgetOptions.widgetContainer));
-            var widgetOptionsRoot       = _getWidgetOptionsRoot(widgetOptions);
-            var identifiers    = _createIdentifiers(level);
-            identifiers[0]     = $(widgetOptionsRoot.widgetItem).length - 1;
+            var level = _getLevel($elem.closest('.' + widgetOptions.widgetContainer));
+            var widgetOptionsRoot = _getWidgetOptionsRoot(widgetOptions);
+            if (!widgetOptionsRoot) {
+                return;
+            }
+            var identifiers = _createIdentifiers(level);
+            identifiers[0] = $(widgetOptionsRoot.widgetItem).length - 1;
             identifiers[level] = count - 1;
 
-            widgetOptions.fields.forEach(function(input) {
+            widgetOptions.fields.forEach(function (input) {
                 var id = input.id.replace("{}", identifiers.join('-'));
-                if ($("#" + widgetOptions.formId).yiiActiveForm("find", id) !== "undefined") {
+                if (typeof $("#" + widgetOptions.formId).yiiActiveForm("find", id) !== 'undefined') {
                     $("#" + widgetOptions.formId).yiiActiveForm("remove", id);
                 }
             });
         }
     };
 
-    var _deleteItem = function(widgetOptions, e, $elem) {
+    var _deleteItem = function (widgetOptions, e, $elem) {
         var count = _count($elem, widgetOptions);
 
         if (count > widgetOptions.min) {
@@ -188,10 +233,13 @@
         }
     };
 
-    var _updateAttrID = function($elem, index) {
-        var widgetOptions = eval($elem.closest('div[data-dynamicform]').attr('data-dynamicform'));
-        var id            = $elem.attr('id');
-        var newID         = id;
+    var _updateAttrID = function ($elem, index) {
+        var widgetOptions = _resolveWidgetOptions($elem.closest('div[data-dynamicform]').attr('data-dynamicform'));
+        if (!widgetOptions) {
+            return;
+        }
+        var id = $elem.attr('id');
+        var newID = id;
 
         if (id !== undefined) {
             var matches = id.match(regexID);
@@ -199,12 +247,22 @@
                 matches[2] = matches[2].substring(1, matches[2].length - 1);
                 var identifiers = matches[2].split('-');
                 identifiers[0] = index;
-                
+
                 if (identifiers.length > 1) {
                     var widgetsOptions = [];
-                    $elem.parents('div[data-dynamicform]').each(function(i){
-                        widgetsOptions[i] = eval($(this).attr('data-dynamicform'));
+                    var parseFailed = false;
+                    $elem.parents('div[data-dynamicform]').each(function (i) {
+                        var options = _resolveWidgetOptions($(this).attr('data-dynamicform'));
+                        if (!options) {
+                            parseFailed = true;
+                            return false;
+                        }
+                        widgetsOptions[i] = options;
                     });
+
+                    if (parseFailed) {
+                        return;
+                    }
 
                     widgetsOptions = widgetsOptions.reverse();
                     for (var i = identifiers.length - 1; i >= 1; i--) {
@@ -221,17 +279,17 @@
         }
 
         if (id !== newID) {
-            $elem.closest(widgetOptions.widgetItem).find('.field-' + id).each(function() {
+            $elem.closest(widgetOptions.widgetItem).find('.field-' + id).each(function () {
                 $(this).removeClass('field-' + id).addClass('field-' + newID);
             });
             // update "for" attribute
-            $elem.closest(widgetOptions.widgetItem).find("label[for='" + id + "']").attr('for',newID); 
+            $elem.closest(widgetOptions.widgetItem).find("label[for='" + id + "']").attr('for', newID);
         }
 
         return newID;
     };
 
-    var _updateAttrName = function($elem, index) {
+    var _updateAttrName = function ($elem, index) {
         var name = $elem.attr('name');
 
         if (name !== undefined) {
@@ -244,9 +302,19 @@
 
                 if (identifiers.length > 1) {
                     var widgetsOptions = [];
-                    $elem.parents('div[data-dynamicform]').each(function(i){
-                        widgetsOptions[i] = eval($(this).attr('data-dynamicform'));
+                    var parseFailed = false;
+                    $elem.parents('div[data-dynamicform]').each(function (i) {
+                        var options = _resolveWidgetOptions($(this).attr('data-dynamicform'));
+                        if (!options) {
+                            parseFailed = true;
+                            return false;
+                        }
+                        widgetsOptions[i] = options;
                     });
+
+                    if (parseFailed) {
+                        return;
+                    }
 
                     widgetsOptions = widgetsOptions.reverse();
                     for (var i = identifiers.length - 1; i >= 1; i--) {
@@ -262,12 +330,15 @@
         return name;
     };
 
-    var _updateAttributes = function(widgetOptions) {
+    var _updateAttributes = function (widgetOptions) {
         var widgetOptionsRoot = _getWidgetOptionsRoot(widgetOptions);
+        if (!widgetOptionsRoot) {
+            return;
+        }
 
-        $(widgetOptionsRoot.widgetItem).each(function(index) {
+        $(widgetOptionsRoot.widgetItem).each(function (index) {
             var $item = $(this);
-            $(this).find('*').each(function() {
+            $(this).find('*').each(function () {
                 // update "id" attribute
                 _updateAttrID($(this), index);
 
@@ -277,17 +348,17 @@
         });
     };
 
-    var _fixFormValidatonInput = function(widgetOptions, attribute, id, name) {
+    var _fixFormValidatonInput = function (widgetOptions, attribute, id, name) {
         if (attribute !== undefined) {
-            attribute           = $.extend(true, {}, attribute);
-            attribute.id        = id;
+            attribute = $.extend(true, {}, attribute);
+            attribute.id = id;
             attribute.container = ".field-" + id;
-            attribute.input     = "#" + id;
-            attribute.name      = name;
-            attribute.value     = $("#" + id).val();
-            attribute.status    = 0;
+            attribute.input = "#" + id;
+            attribute.name = name;
+            attribute.value = $("#" + id).val();
+            attribute.status = 0;
 
-            if ($("#" + widgetOptions.formId).yiiActiveForm("find", id) !== "undefined") {
+            if (typeof $("#" + widgetOptions.formId).yiiActiveForm("find", id) !== 'undefined') {
                 $("#" + widgetOptions.formId).yiiActiveForm("remove", id);
             }
 
@@ -295,30 +366,39 @@
         }
     };
 
-    var _fixFormValidaton = function(widgetOptions) {
+    var _fixFormValidaton = function (widgetOptions) {
         var widgetOptionsRoot = _getWidgetOptionsRoot(widgetOptions);
 
-        $(widgetOptionsRoot.widgetBody).find('input, textarea, select').each(function() {
-            var id   = $(this).attr('id');
+        if (!widgetOptionsRoot) {
+            return;
+        }
+
+        $(widgetOptionsRoot.widgetBody).find('input, textarea, select').each(function () {
+            var id = $(this).attr('id');
             var name = $(this).attr('name');
 
             if (id !== undefined && name !== undefined) {
-                currentWidgetOptions = eval($(this).closest('div[data-dynamicform]').attr('data-dynamicform'));
+                var currentWidgetOptions = _resolveWidgetOptions($(this).closest('div[data-dynamicform]').attr('data-dynamicform'));
+                if (!currentWidgetOptions) {
+                    return;
+                }
                 var matches = id.match(regexID);
 
                 if (matches && matches.length === 4) {
-                    matches[2]      = matches[2].substring(1, matches[2].length - 1);
-                    var level       = _getLevel($(this));
-                    var identifiers = _createIdentifiers(level -1);
-                    var baseID      = matches[1] + '-' + identifiers.join('-') + '-' + matches[3];
-                    var attribute   = $("#" + currentWidgetOptions.formId).yiiActiveForm("find", baseID);
-                    _fixFormValidatonInput(currentWidgetOptions, attribute, id, name);
+                    matches[2] = matches[2].substring(1, matches[2].length - 1);
+                    var level = _getLevel($(this));
+                    var identifiers = _createIdentifiers(level - 1);
+                    var baseID = matches[1] + '-' + identifiers.join('-') + '-' + matches[3];
+                    var attribute = $("#" + currentWidgetOptions.formId).yiiActiveForm("find", baseID);
+                    if (typeof attribute !== 'undefined') {
+                        _fixFormValidatonInput(currentWidgetOptions, attribute, id, name);
+                    }
                 }
             }
         });
     };
 
-    var _restoreKrajeeDepdrop = function($elem) {
+    var _restoreKrajeeDepdrop = function ($elem) {
         var configDepdrop = $.extend(true, {}, eval($elem.attr('data-krajee-depdrop')));
         var inputID = $elem.attr('id');
         var matchID = inputID.match(regexID);
@@ -335,13 +415,16 @@
         $elem.depdrop(configDepdrop);
     };
 
-    var _restoreSpecialJs = function(widgetOptions) {
+    var _restoreSpecialJs = function (widgetOptions) {
         var widgetOptionsRoot = _getWidgetOptionsRoot(widgetOptions);
+        if (!widgetOptionsRoot) {
+            return;
+        }
 
         // "jquery.inputmask"
         var $hasInputmask = $(widgetOptionsRoot.widgetItem).find('[data-plugin-inputmask]');
         if ($hasInputmask.length > 0) {
-            $hasInputmask.each(function() {
+            $hasInputmask.each(function () {
                 $(this).inputmask('remove');
                 $(this).inputmask(eval($(this).attr('data-plugin-inputmask')));
             });
@@ -350,7 +433,7 @@
         // "kartik-v/yii2-widget-datepicker"
         var $hasDatepicker = $(widgetOptionsRoot.widgetItem).find('[data-krajee-datepicker], [data-krajee-kvDatepicker]');
         if ($hasDatepicker.length > 0) {
-            $hasDatepicker.each(function() {
+            $hasDatepicker.each(function () {
                 var $input = $(this);
                 var pluginAttr = $input.attr('data-krajee-kvDatepicker') ? 'data-krajee-kvDatepicker' : 'data-krajee-datepicker';
                 var pluginName = pluginAttr === 'data-krajee-kvDatepicker' ? 'kvDatepicker' : 'datepicker';
@@ -389,7 +472,7 @@
         // "kartik-v/yii2-widget-datetimepicker"
         var $hasDateTimepicker = $(widgetOptionsRoot.widgetItem).find('[data-krajee-datetimepicker]');
         if ($hasDateTimepicker.length > 0 && typeof $.fn.datetimepicker === 'function') {
-            $hasDateTimepicker.each(function() {
+            $hasDateTimepicker.each(function () {
                 var $input = $(this);
                 var pluginConfigVar = $input.attr('data-krajee-datetimepicker');
                 if (!pluginConfigVar) {
@@ -415,7 +498,7 @@
         // "kartik-v/yii2-widget-timepicker"
         var $hasTimepicker = $(widgetOptionsRoot.widgetItem).find('[data-krajee-timepicker]');
         if ($hasTimepicker.length > 0) {
-            $hasTimepicker.each(function() {
+            $hasTimepicker.each(function () {
                 $(this).removeData().off();
                 $(this).parent().find('.bootstrap-timepicker-widget').remove();
                 $(this).unbind();
@@ -426,10 +509,10 @@
         // "kartik-v/yii2-money"
         var $hasMaskmoney = $(widgetOptionsRoot.widgetItem).find('[data-krajee-maskMoney]');
         if ($hasMaskmoney.length > 0) {
-            $hasMaskmoney.each(function() {
+            $hasMaskmoney.each(function () {
                 $(this).parent().find('input').removeData().off();
                 var id = '#' + $(this).attr('id');
-                var displayID  = id + '-disp';
+                var displayID = id + '-disp';
                 $(displayID).maskMoney('destroy');
                 $(displayID).maskMoney(eval($(this).attr('data-krajee-maskMoney')));
                 $(displayID).maskMoney('mask', parseFloat($(id).val()));
@@ -444,7 +527,7 @@
         // "kartik-v/yii2-widget-fileinput"
         var $hasFileinput = $(widgetOptionsRoot.widgetItem).find('[data-krajee-fileinput]');
         if ($hasFileinput.length > 0) {
-            $hasFileinput.each(function() {
+            $hasFileinput.each(function () {
                 $(this).fileinput(eval($(this).attr('data-krajee-fileinput')));
             });
         }
@@ -452,7 +535,7 @@
         // "kartik-v/yii2-widget-touchspin"
         var $hasTouchSpin = $(widgetOptionsRoot.widgetItem).find('[data-krajee-TouchSpin]');
         if ($hasTouchSpin.length > 0) {
-            $hasTouchSpin.each(function() {
+            $hasTouchSpin.each(function () {
                 $(this).TouchSpin('destroy');
                 $(this).TouchSpin(eval($(this).attr('data-krajee-TouchSpin')));
             });
@@ -461,9 +544,9 @@
         // "kartik-v/yii2-widget-colorinput"
         var $hasSpectrum = $(widgetOptionsRoot.widgetItem).find('[data-krajee-spectrum]');
         if ($hasSpectrum.length > 0) {
-            $hasSpectrum.each(function() {
+            $hasSpectrum.each(function () {
                 var id = '#' + $(this).attr('id');
-                var sourceID  = id + '-source';
+                var sourceID = id + '-source';
                 $(sourceID).spectrum('destroy');
                 $(sourceID).unbind();
                 $(id).unbind();
@@ -474,7 +557,7 @@
                 $(sourceID).attr('name', $(sourceID).attr('id'));
                 $(sourceID).spectrum(configSpectrum);
                 $(sourceID).spectrum('set', jQuery(id).val());
-                $(id).on('change', function(){
+                $(id).on('change', function () {
                     $(sourceID).spectrum('set', jQuery(id).val());
                 });
             });
@@ -483,7 +566,7 @@
         // "kartik-v/yii2-widget-depdrop"
         var $hasDepdrop = $(widgetOptionsRoot.widgetItem).find('[data-krajee-depdrop]');
         if ($hasDepdrop.length > 0) {
-            $hasDepdrop.each(function() {
+            $hasDepdrop.each(function () {
                 if ($(this).data('select2') === undefined) {
                     $(this).removeData().off();
                     $(this).unbind();
@@ -495,7 +578,7 @@
         // "kartik-v/yii2-widget-select2"
         var $hasSelect2 = $(widgetOptionsRoot.widgetItem).find('[data-krajee-select2]');
         if ($hasSelect2.length > 0) {
-            $hasSelect2.each(function() {
+            $hasSelect2.each(function () {
                 var id = $(this).attr('id');
                 var configSelect2 = eval($(this).attr('data-krajee-select2'));
 
@@ -515,15 +598,15 @@
 
                 var kvClose = 'kv_close_' + id.replace(/\-/g, '_');
 
-                $('#' + id).on('select2:opening', function(ev) {
+                $('#' + id).on('select2:opening', function (ev) {
                     initSelect2DropStyle(id, kvClose, ev);
                 });
 
-                $('#' + id).on('select2:unselect', function() {
+                $('#' + id).on('select2:unselect', function () {
                     window[kvClose] = true;
                 });
 
-               if (configDepdrop) {
+                if (configDepdrop) {
                     var loadingText = (configDepdrop.loadingText) ? configDepdrop.loadingText : 'Loading ...';
                     initDepdropS2(id, loadingText);
                 }

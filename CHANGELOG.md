@@ -1,6 +1,12 @@
 # yii2-dynamicform change Log
 
 
+## [v0.2.1 (2025-10-23)](https://github.com/AlexandrDadle/yii2-dynamicform-dadle/compare/v0.2...v0.2.1)
+
+- Refactored `yii2-dynamic-form.js` to resolve widget options via a safe helper instead of `eval`, restoring nested form cloning behaviour and reducing XSS risk.
+- Hardened reinitialisation flow with extra null-checks so dependent widgets (select2, datepicker, etc.) no longer throw when configuration is missing.
+- Bumped the `yiisoft/yii2` constraint to `~2.0.5|~2.0.40` for compatibility with the 2.0.40+ patch line.
+
 ## [v0.2.0 (2025-10-22)](https://github.com/AlexandrDadle/yii2-dynamicform-dadle/releases/tag/v0.2)
 
 - Fork renamed to `alexandrdadle/yii2-dynamicform-dadle`, namespace switched to `alexandrdadle\\dynamicform`, and installation docs refreshed.
