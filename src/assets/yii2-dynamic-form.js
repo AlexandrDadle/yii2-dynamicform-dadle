@@ -348,11 +348,67 @@
         }
 
         // "kartik-v/yii2-widget-datepicker"
-        var $hasDatepicker = $(widgetOptionsRoot.widgetItem).find('[data-krajee-datepicker]');
+        var $hasDatepicker = $(widgetOptionsRoot.widgetItem).find('[data-krajee-datepicker], [data-krajee-kvDatepicker]');
         if ($hasDatepicker.length > 0) {
             $hasDatepicker.each(function() {
-                $(this).parent().removeData().datepicker('remove');
-                $(this).parent().datepicker(eval($(this).attr('data-krajee-datepicker')));
+                var $input = $(this);
+                var pluginAttr = $input.attr('data-krajee-kvDatepicker') ? 'data-krajee-kvDatepicker' : 'data-krajee-datepicker';
+                var pluginName = pluginAttr === 'data-krajee-kvDatepicker' ? 'kvDatepicker' : 'datepicker';
+                var pluginConfigVar = $input.attr(pluginAttr);
+                if (!pluginConfigVar || typeof $.fn[pluginName] !== 'function') {
+                    return;
+                }
+
+                var pluginConfig = eval(pluginConfigVar);
+                var sourceId = $input.attr('data-datepicker-source');
+                var $target = sourceId ? $(document.getElementById(sourceId)) : $input;
+
+                if (!$target || !$target.length) {
+                    $target = $input;
+                }
+
+                if ($target.data('datepicker')) {
+                    if (typeof $target.kvDatepicker === 'function') {
+                        $target.kvDatepicker('remove');
+                    }
+                    if (typeof $target.datepicker === 'function') {
+                        $target.datepicker('remove');
+                    }
+                }
+
+                $target.removeData();
+
+                if (pluginName === 'kvDatepicker') {
+                    $target.kvDatepicker(pluginConfig);
+                } else {
+                    $target.datepicker(pluginConfig);
+                }
+            });
+        }
+
+        // "kartik-v/yii2-widget-datetimepicker"
+        var $hasDateTimepicker = $(widgetOptionsRoot.widgetItem).find('[data-krajee-datetimepicker]');
+        if ($hasDateTimepicker.length > 0 && typeof $.fn.datetimepicker === 'function') {
+            $hasDateTimepicker.each(function() {
+                var $input = $(this);
+                var pluginConfigVar = $input.attr('data-krajee-datetimepicker');
+                if (!pluginConfigVar) {
+                    return;
+                }
+
+                var pluginConfig = eval(pluginConfigVar);
+                var sourceId = $input.attr('data-datetimepicker-source') || $input.attr('data-datepicker-source');
+                var $target = sourceId ? $(document.getElementById(sourceId)) : $input;
+
+                if (!$target || !$target.length) {
+                    $target = $input;
+                }
+
+                if ($target.data('datetimepicker')) {
+                    $target.datetimepicker('remove');
+                }
+                $target.removeData();
+                $target.datetimepicker(pluginConfig);
             });
         }
 
