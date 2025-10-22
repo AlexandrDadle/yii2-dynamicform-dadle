@@ -1,11 +1,11 @@
 <?php
 /**
- * @link      https://github.com/wbraganca/yii2-dynamicform
+ * @link      https://github.com/AlexandrDadle/yii2-dynamicform-dadle
  * @copyright Copyright (c) 2014 Wanderson Bragança
- * @license   https://github.com/wbraganca/yii2-dynamicform/blob/master/LICENSE
+ * @license   https://github.com/AlexandrDadle/yii2-dynamicform-dadle/blob/master/LICENSE
  */
 
-namespace wbraganca\dynamicform;
+namespace alexandrdadle\dynamicform;
 
 use Yii;
 use yii\helpers\Html;

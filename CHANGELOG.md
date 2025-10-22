@@ -1,6 +1,13 @@
 # yii2-dynamicform change Log
 
 
+## [v0.2.0 (2025-10-22)](https://github.com/AlexandrDadle/yii2-dynamicform-dadle/releases/tag/v0.2)
+
+- Fork renamed to `alexandrdadle/yii2-dynamicform-dadle`, namespace switched to `alexandrdadle\\dynamicform`, and installation docs refreshed.
+- Expanded compatibility of `symfony/css-selector` and `symfony/dom-crawler` up to the 7.x series.
+- Marked project as maintained fork targeting PHP 7.4+/8.x environments.
+
+
 ## [v2.0.3 (2020-05-18)](https://github.com/wbraganca/yii2-dynamicform/compare/v2.0.3...v2.0.2)
 
 - Enh: Updated composer.json ('symfony/dom-crawler': '~2.8|~3.0' and 'symfony/css-selector': '~2.8|~3.0').
