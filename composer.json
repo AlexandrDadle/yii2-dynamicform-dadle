@@ -1,6 +1,6 @@
 {
-    "name": "wbraganca/yii2-dynamicform",
-    "description": "It is widget to yii2 framework to clone form elements in a nested manner, maintaining accessibility.",
+    "name": "alexandrdadle/yii2-dynamicform-dadle",
+    "description": "Fork of yii2-dynamicform adjusted for PHP 8 compatibility and internal maintenance.",
     "keywords": [
         "wbraganca",
         "yii2",
@@ -13,15 +13,18 @@
     "type": "yii2-extension",
     "license": "BSD-3-Clause",
     "support": {
-        "issues": "https://github.com/wbraganca/yii2-dynamicform/issues",
-        "wiki": "https://github.com/wbraganca/yii2-dynamicform/wiki/",
-        "source": "https://github.com/wbraganca/yii2-dynamicform"
+        "issues": "https://github.com/AlexandrDadle/yii2-dynamicform-dadle/issues",
+        "source": "https://github.com/AlexandrDadle/yii2-dynamicform-dadle"
     },
     "authors": [
         {
             "name": "Wanderson Bragança",
             "email": "wanderson.wbc@gmail.com",
             "homepage": "http://wbraganca.com"
+        },
+        {
+            "name": "Alexandr Dadle",
+            "homepage": "https://github.com/AlexandrDadle"
         }
     ],
     "require": {
